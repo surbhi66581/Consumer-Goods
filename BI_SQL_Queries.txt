@@ -1,0 +1,123 @@
+use gdb023;
+/* Q-1 Provide the list of markets in which customer 'Atliq Exclusive' operates its business in the APAC region.*/
+select market from dim_customer where customer="Atliq Exclusive" and region="APAC";
+
+-- Q-2 What is the percentage of unique product increase in 2021 vs. 2020?
+SELECT
+  COUNT(DISTINCT CASE WHEN fiscal_year = 2020 THEN product_code END) AS unique_products_2020,
+  COUNT(DISTINCT CASE WHEN fiscal_year = 2021 THEN product_code END) AS unique_products_2021,
+  CASE WHEN COUNT(DISTINCT CASE WHEN fiscal_year = 2020 THEN product_code END) = 0 THEN 0
+       ELSE ((COUNT(DISTINCT CASE WHEN fiscal_year = 2021 THEN product_code END) - 
+              COUNT(DISTINCT CASE WHEN fiscal_year = 2020 THEN product_code END)) / 
+              CAST(COUNT(DISTINCT CASE WHEN fiscal_year = 2020 THEN product_code END) AS FLOAT)) * 100
+  END AS percentage_change
+FROM fact_gross_price;
+
+/* Q-3 Provide a report with all the unique product counts for each segment and
+sort them in descending order of product counts*/
+select distinct(count(product)) as product_count, segment 
+from dim_product group by segment order by product_count desc;
+
+-- Q-4 Which segment had the most increase in unique products in 2021 vs 2020?
+SELECT dim_product.segment, 
+  COUNT(DISTINCT CASE WHEN fact_gross_price.fiscal_year = 2020 THEN fact_gross_price.product_code END) AS unique_products_2020,
+  COUNT(DISTINCT CASE WHEN fact_gross_price.fiscal_year = 2021 THEN fact_gross_price.product_code END) AS unique_products_2021,
+  CASE WHEN COUNT(DISTINCT CASE WHEN fact_gross_price.fiscal_year = 2020 THEN fact_gross_price.product_code END) = 0 THEN 0
+       ELSE (COUNT(DISTINCT CASE WHEN fact_gross_price.fiscal_year = 2021 THEN fact_gross_price.product_code END) - 
+              COUNT(DISTINCT CASE WHEN fact_gross_price.fiscal_year = 2020 THEN fact_gross_price.product_code END)) 
+              
+  END AS difference
+FROM fact_gross_price, dim_product where dim_product.product_code=fact_gross_price.product_code 
+group by dim_product.segment order by difference desc;
+
+-- Q-5 Get the products that have the highest and lowest manufacturing costs.
+(select dim_product.product_code, dim_product.product,fact_manufacturing_cost.manufacturing_cost
+from dim_product join fact_manufacturing_cost
+on dim_product.product_code=fact_manufacturing_cost.product_code 
+order by fact_manufacturing_cost.manufacturing_cost asc limit 1)
+UNION ALL
+(select dim_product.product_code, dim_product.product,fact_manufacturing_cost.manufacturing_cost 
+from dim_product join fact_manufacturing_cost
+on dim_product.product_code=fact_manufacturing_cost.product_code 
+order by fact_manufacturing_cost.manufacturing_cost desc limit 1);
+
+/* Q-6 Generate a report which contains the top 5 customers who received an
+average high pre_invoice_discount_pct for the fiscal year 2021 and in the
+Indian market.*/
+select a.customer_code, a.market, round(avg(pre_invoice_discount_pct),2) as average_discount
+FROM fact_pre_invoice_deductions as b
+JOIN dim_customer as a ON a.customer_code = b.customer_code
+where a.market="India" AND fiscal_year = "2021"
+group by a.customer_code order by average_discount desc limit 6;
+
+
+/* Q-7 Get the complete report of the Gross sales amount for the customer “Atliq
+Exclusive” for each month. This analysis helps to get an idea of low and
+high-performing months and take strategic decisions.*/
+
+-- First method
+select monthname(b.date), month(b.date), year(b.date),concat(round(sum(b.sold_quantity*c.gross_price)/1000000,2),"M") as sales_amount
+from dim_customer as a join fact_sales_monthly as b on a.customer_code = b.customer_code
+join fact_gross_price as c on b.product_code=c.product_code
+group by  year(b.date), monthname(b.date), month(b.date) order by  year(b.date), month(b.date) ;
+
+-- Second method
+WITH temp_table AS (
+    SELECT customer,
+    monthname(date) AS months ,
+    month(date) AS month_number, 
+    year(date) AS year,
+    sold_quantity * gross_price  AS gross_sales
+FROM fact_sales_monthly as s JOIN
+ fact_gross_price as g ON s.product_code = g.product_code
+ JOIN dim_customer as c ON s.customer_code=c.customer_code
+)
+SELECT months,year, concat(round(sum(gross_sales)/1000000,2),"M") AS gross_sales FROM temp_table
+GROUP BY year,months, month_number
+ORDER BY year,month_number;
+
+-- Q-8 In which quarter of 2020, got the maximum total_sold_quantity?
+select quarter(date) as quarterly, sum(sold_quantity) as total_sold_quantity 
+from fact_sales_monthly where year(date)= 2020 group by quarterly 
+order by total_sold_quantity desc;
+
+-- Q-9 Which channel helped to bring more gross sales in the fiscal year 2021 and the percentage of contribution?
+select a.channel, sum(b.sold_quantity*c.gross_price) as gross_amount,
+(sum(b.sold_quantity*c.gross_price) / SUM(sum(b.sold_quantity*c.gross_price)) OVER ()) * 100 AS channel_contribution_percent
+from dim_customer as a 
+join fact_sales_monthly as b on a.customer_code=b.customer_code
+join fact_gross_price as c on b.product_code=c.product_code
+where b.fiscal_year= 2021 group by a.channel;
+
+-- Q-10
+
+WITH Output1 AS 
+(
+SELECT P.division, FS.product_code, P.product, SUM(FS.sold_quantity) AS Total_sold_quantity
+FROM dim_product P JOIN fact_sales_monthly FS
+ON P.product_code = FS.product_code
+WHERE FS.fiscal_year = 2021 
+GROUP BY  FS.product_code, division, P.product
+),
+Output2 AS 
+(
+SELECT division, product_code, product, Total_sold_quantity,
+        RANK() OVER(PARTITION BY division ORDER BY Total_sold_quantity DESC) AS 'Rank_Order' 
+FROM Output1
+)
+ SELECT Output1.division, Output1.product_code, Output1.product, Output2.Total_sold_quantity, Output2.Rank_Order
+ FROM Output1 JOIN Output2
+ ON Output1.product_code = Output2.product_code
+WHERE Output2.Rank_Order IN (1,2,3);
+
+
+-- Q-11 Provide the list of markets and total sales in which customer "Atliq Exclusive" operates its business in the APAC region.
+
+select distinct(a.market) as "Market", sum(b.sold_quantity*c.gross_price) as "Gross Sales"
+from dim_customer as a 
+join fact_sales_monthly as b on a.customer_code=b.customer_code
+join fact_gross_price as c on b.product_code=c.product_code where region= "APAC" group by a.market;
+
+
+
+
