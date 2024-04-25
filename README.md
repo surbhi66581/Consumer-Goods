@@ -19,7 +19,7 @@ This BI solution will transform the way the company uses data, enabling them to 
 
 ## Metadata
 
-This database includes information from six main tables:
+I have used a database that includes information from six main tables:
 
 1. dim_customer: contains customer-related data
 2. dim_product: contains product-related data
