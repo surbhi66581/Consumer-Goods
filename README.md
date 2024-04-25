@@ -1,5 +1,12 @@
 # Consumer Goods PowerBI Project
 
+## Files Information :
+
+1. PowerBI Dashboard in PDF format: [Consumer_Goods_PowerBI_Dashboard_PDF.pdf](https://github.com/surbhi66581/Consumer-Goods-PowerBI-Project/blob/382f793602c7f9ecdd3003649e083ed892ef0023/Consumer_Goods_PowerBI_Dashboard_PDF.pdf)
+2. PowerBI Dashboard in PBIX format: [Consumer_Goods_PowerBI_Dashboard.pbix](https://github.com/surbhi66581/Consumer-Goods-PowerBI-Project/blob/cc887495c674e41ea4798f7458d043590ed81eae/Consumer_Goods_PowerBI_Dashboard.pbix)
+3. Consumer Insight Presentation: [Consumer_Goods_Presentation.pdf](https://github.com/surbhi66581/Consumer-Goods-PowerBI-Project/blob/382f793602c7f9ecdd3003649e083ed892ef0023/Consumer_Goods_Presentation.pdf)
+4. SQL Queries used for BI: [BI_SQL_Queries.txt](https://github.com/surbhi66581/Consumer-Goods-PowerBI-Project/blob/cc887495c674e41ea4798f7458d043590ed81eae/BI_SQL_Queries.txt)
+
 
 ## Challenge: Data-Driven Decisions for a Consumer Goods Leader
 A leading consumer goods company struggles to translate data into actionable insights. Their current approach hinders strategic decision-making, making it difficult to react quickly to market trends.
