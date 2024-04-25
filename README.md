@@ -19,7 +19,7 @@ This BI solution will transform the way the company uses data, enabling them to 
 
 ## Metadata
 
-This file provides a comprehensive overview of the tables found in the 'gdb023' (atliq_hardware_db) database. It includes information for six main tables:
+This database includes information from six main tables:
 
 1. dim_customer: contains customer-related data
 2. dim_product: contains product-related data
